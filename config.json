@@ -1,0 +1,52 @@
+{
+  "server": {
+    "ip": "192.168.1.236",
+    "port": 80,
+    "public_url": "http://192.168.1.236",
+    "force_region": "eu",
+    "use_https_proxy": false
+  },
+
+  "paths": {
+    "src": "src",
+    "region_root": "src/ds",
+    "region_folder": "v2-eu",
+
+    "database": "database",
+    "users": "database/users",
+    "movies": "database/movies",
+    "thumbnails": "database/thumbnails",
+    "comments": "database/comments",
+    "channels": "database/channels",
+    "ntft": "database/ntft",
+    "templates": "template"
+  },
+
+  "flipnote": {
+    "max_upload_size": 1048576,
+    "rate_limit_seconds": 30,
+    "auto_generate_json": true,
+    "auto_generate_thumbnails": true,
+    "require_rsa": true
+  },
+
+  "dsi": {
+    "log_headers": true,
+    "allow_unverified": false,
+    "region_override": true
+  },
+
+  "dns": {
+    "redirect_domains": [
+      "flipnote.hatena.com",
+      "ugomemo.hatena.ne.jp"
+    ]
+  },
+
+  "logging": {
+    "enable": true,
+    "log_uploads": true,
+    "log_errors": true,
+    "log_requests": false
+  }
+}
