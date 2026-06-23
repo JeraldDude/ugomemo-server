@@ -56,10 +56,9 @@ def proxy(path):
 
 if __name__ == '__main__':
     local_ip = get_local_ip()
-    logger.info(f'Hatena Server proxy running at {local_ip} on Port 8080.')
+    logger.info(f'Hatena Server proxy running at {local_ip} on Port 80.')
     logger.info('Running on:')
     logger.info(f'* (0.0.0.0)')
-    logger.info(f'* http://127.0.0.1:8080')
-    logger.info(f'* http://{local_ip}:8080')
-    app.run(host='0.0.0.0', port=8080)
-
+    logger.info(f'* http://127.0.0.1:80')
+    logger.info(f'* http://{local_ip}:80')
+    app.run(host='0.0.0.0', port=80)
