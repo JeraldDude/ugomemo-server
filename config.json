@@ -24,7 +24,7 @@
 
   "flipnote": {
     "max_upload_size": 1048576,
-    "rate_limit_seconds": 30,
+    "rate_limit_seconds": 120,
     "auto_generate_json": true,
     "auto_generate_thumbnails": true,
     "require_rsa": true
@@ -39,7 +39,9 @@
   "dns": {
     "redirect_domains": [
       "flipnote.hatena.com",
-      "ugomemo.hatena.ne.jp"
+      "ugomemo.hatena.ne.jp",
+      "ns.ugomemo.hatena.ne.jp",
+      "ns.flipnote.hatena.com"      
     ]
   },
 
