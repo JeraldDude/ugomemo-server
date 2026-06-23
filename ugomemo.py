@@ -6,7 +6,7 @@ import re
 
 app = Flask(__name__)
 
-ASSET_FOLDER = 'ASSET'  # Update this path to your actual ASSET folder location
+ASSET_FOLDER = 'src'  # Update the folder name of your Flipnote Hatena assets
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(message)s')
