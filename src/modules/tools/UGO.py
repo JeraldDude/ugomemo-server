@@ -3,7 +3,7 @@ import base64
 import struct
 
 
-MCalculator = b"UGAR"
+MAGIC = b"UGAR"
 
 
 def encode_label(text: str) -> bytes:
@@ -20,10 +20,10 @@ def encode_url(url: str) -> bytes:
 
 def pack_entry(entry: dict) -> bytes:
     """
-    Pack a single UGO entry in Hatena's real binary format:
+    Pack a single UGO entry in Hatena-style binary format:
 
     uint32  type (always 4)
-    char*   url (null-terminated UTF-8)
+    char*   url   (null-terminated UTF-8)
     uint32  icon
     char*   label (null-terminated Base64 UTF16LE)
     uint32  trait (0)
@@ -43,22 +43,22 @@ def pack_entry(entry: dict) -> bytes:
     )
 
 
-def convert_json_to_ugo(json_obj: dict) -> bytes:
+def json_to_ugo(json_obj: dict) -> bytes:
     """
-    Convert JSON menu structure into a real UGO binary.
-    """
+    Convert JSON menu structure into a UGO binary:
 
+    Header:
+      'UGAR'
+      uint32 entry_count
+      uint32 offset_to_table (0x20)
+      5× uint32 reserved (0)
+    Then entry table.
+    """
     items = json_obj["items"]
     entry_count = len(items)
 
-    # Build entry table
     table = b"".join(pack_entry(e) for e in items)
 
-    # Header:
-    # MCalculator (4 bytes)
-    # entry_count (uint32)
-    # offset_to_table (uint32) = 0x20
-    # then 5 reserved uint32 fields
     header = (
         MCalculator +
         struct.pack(">I", entry_count) +
@@ -73,11 +73,11 @@ def convert_json_to_ugo(json_obj: dict) -> bytes:
     return header + table
 
 
-def convert_file(input_path: str, output_path: str):
+def convert_file(input_path: str, output_path: str) -> None:
     with open(input_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    ugo = convert_json_to_ugo(data)
+    ugo = json_to_ugo(data)
 
     with open(output_path, "wb") as f:
         f.write(ugo)
