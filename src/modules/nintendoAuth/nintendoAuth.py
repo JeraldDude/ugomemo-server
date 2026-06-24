@@ -1,17 +1,17 @@
+class NintendoAuth:
+    """
+    Nintendo DS/DSi NAS Authentication Module
+    Pure logic version — your main server handles routing and HTTP.
+    This module only processes NAS /ac requests and returns the correct response.
+    """
 
-# Nintendo Authentication Server ( Nintendo DSi, Flipnote Hatena service )
-import random
-import string
-from datetime import datetime
-
-class NasServer:
-    def __init__(self):
-        pass
-
-    # Main entry point: handle POST /ac
-    def handle_ac_request(self, body: str, client_ip: str) -> str:
+    def handle_ac(self, body: str, client_ip: str) -> str:
+        """
+        Handle POST /ac (NAS login)
+        """
         action = self._get_param(body, "action")
 
+        # Only "login" is supported for now
         if action != "login":
             return "returncd=600\nretry=0\n"
 
@@ -30,6 +30,10 @@ class NasServer:
             f"datetime={timestamp}\n"
         )
 
+    # ---------------------------------------------------------
+    # Helpers
+    # ---------------------------------------------------------
+
     def _get_param(self, body: str, key: str) -> str:
         for part in body.split("&"):
             if part.startswith(key + "="):
@@ -37,10 +41,12 @@ class NasServer:
         return ""
 
     def _random_challenge(self, length: int) -> str:
+        import random, string
         chars = string.ascii_letters + string.digits
         return "".join(random.choice(chars) for _ in range(length))
 
     def _nas_datetime(self) -> str:
+        from datetime import datetime
         return datetime.utcnow().strftime("%Y%m%d%H%M%S")
 
     def _build_token(self, challenge: str, client_ip: str, token_data: str) -> str:
