@@ -6,6 +6,6 @@
         {"type": "button", "url": "http://flipnote.hatena.com/ds/v2-xx/profile.htm?view=me", "label": "Creator's Room", "icon": 104},
         {"type": "button", "url": "http://flipnote.hatena.com/ds/v2-xx/channels.uls", "label": "Channels", "icon": 101},
         {"type": "button", "url": "http://flipnote.hatena.com/ds/v2-xx/help/news.htm", "label": "News", "icon": 102},
-        {"type": "button", "url": "http://flipnote.hatena.com/ds/v2-xx/help/news.htm", "label": "News", "icon": 102},        
+        {"type": "button", "url": "ugomemo://command", "label": "Search Flipnotes", "icon": 103},        
     ]
 }
