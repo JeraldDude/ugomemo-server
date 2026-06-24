@@ -1,6 +1,4 @@
-# src/modules/conntest/conntest.py
-
-class ConnectionTest:
+class NintendoConnectionTest:
     """
     Authentic Nintendo Connection Test index page.
     This is the REAL content Nintendo served at GET /.
@@ -26,6 +24,6 @@ This is test.html page
 
     def handle_any(self, path: str) -> str:
         """
-        Optional: Nintendo returned the same HTML for ANY path.
+        Nintendo returned the same HTML for ANY path.
         """
         return self.INDEX_PAGE
