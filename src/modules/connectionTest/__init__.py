@@ -1,1 +1,1 @@
-from modules.connectionTest import nintendoConnectiontest
+from modules.connectionTest import NintendoConnectionTest
