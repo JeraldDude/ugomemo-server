@@ -1,6 +1,7 @@
 import json
 import base64
 import struct
+import os
 
 
 MAGIC = b"UGAR"
@@ -74,6 +75,7 @@ def json_to_ugo(json_obj: dict) -> bytes:
 
 
 def convert_file(input_path: str, output_path: str) -> None:
+    """Convert a JSON file into a .ugo file."""
     with open(input_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
@@ -82,4 +84,34 @@ def convert_file(input_path: str, output_path: str) -> None:
     with open(output_path, "wb") as f:
         f.write(ugo)
 
-    print(f"Converted {input_path} → {output_path} (UGAR, {len(data['items'])} entries)")
+    print(f"[UGO] Converted {input_path} → {output_path} ({len(data['items'])} entries)")
+
+
+# ---------------------------------------------------------
+# Stand-alone execution mode
+# ---------------------------------------------------------
+
+if __name__ == "__main__":
+    # Detect region folder automatically (v2-us, v2-eu, v2-jp)
+    base = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    ds_folder = os.path.join(base, "ds")
+
+    # Find first v2-xx folder
+    region_folder = None
+    for name in os.listdir(ds_folder):
+        if name.startswith("v2-"):
+            region_folder = os.path.join(ds_folder, name)
+            break
+
+    if region_folder is None:
+        print("[UGO] ERROR: No /ds/v2-xx/ folder found.")
+        exit(1)
+
+    json_path = os.path.join(region_folder, "index.json")
+    ugo_path = os.path.join(region_folder, "index.ugo")
+
+    if not os.path.isfile(json_path):
+        print(f"[UGO] ERROR: {json_path} not found.")
+        exit(1)
+
+    convert_file(json_path, ugo_path)
