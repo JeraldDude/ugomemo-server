@@ -2,161 +2,150 @@
 # Startup Banner
 # ---------------------------------------------------------
 
-print ("███ █   █ ███ █   █  █  ███ ███     █ █ ███ ███ ███ █  █ ███     ███ ███ ███ █ █ ███ ███")
-print ("█   █   █ █ █ ██  █ █ █  █  █       █ █ █ █  █  █   ██ █ █ █     █   █   █ █ █ █ █   █ █")
-print ("███ █   █ ███ █ █ █ █ █  █  ███     ███ ███  █  ███ █ ██ ███     ███ ███ ███ █ █ ███ ███")
-print ("█   █   █ █   █  ██ █ █  █  █       █ █ █ █  █  █   █  █ █ █       █ █   ██  █ █ █   ██")
-print ("█   ███ █ █   █   █  █   █  ███     █ █ █ █  █  ███ █  █ █ █     ███ ███ █ █  █  ███ █ █")
+print("███ █   █ ███ █   █  █  ███ ███     █ █ ███ ███ ███ █  █ ███     ███ ███ ███ █ █ ███ ███")
+print("█   █   █ █ █ ██  █ █ █  █  █       █ █ █ █  █  █   ██ █ █ █     █   █   █ █ █ █ █   █ █")
+print("███ █   █ ███ █ █ █ █ █  █  ███     ███ ███  █  ███ █ ██ ███     ███ ███ ███ █ █ ███ ███")
+print("█   █   █ █   █  ██ █ █  █  █       █ █ █ █  █  █   █  █ █ █       █ █   ██  █ █ █   ██")
+print("█   ███ █ █   █   █  █   █  ███     █ █ █ █  █  ███ █  █ █ █     ███ ███ █ █  █  ███ █ █")
 
 # ---------------------------------------------------------
 # Flipnote Frog Mascot
 # ---------------------------------------------------------
 
-print ("   ██  ██")
-print ("  █ ████ █")
-print ("  █ ████ █")
-print ("  ████████")
-print (" ██████████")
-print (" ██      ██")
-print ("███      ███")
-print ("████    ████")
-print (" ████  ████")
-print ("████████████")
+print("   ██  ██")
+print("  █ ████ █")
+print("  █ ████ █")
+print("  ████████")
+print(" ██████████")
+print(" ██      ██")
+print("███      ███")
+print("████    ████")
+print(" ████  ████")
+print("████████████")
 
 # ---------------------------------------------------------
 # Imports
 # ---------------------------------------------------------
 
-import os
+import time
 import socket
-import threading
+import importlib
+from flask import Flask, request, make_response
 
-from src.modules.connectionTest import NintendoConnectionTest
-from src.modules.nintendoAuth import NintendoAuth
-
-# ---------------------------------------------------------
-# Initialize Modules
-# ---------------------------------------------------------
-
-conntest = NintendoConnectionTest()
-nas = NintendoAuth()
-
-# Path to static assets
-ASSET_ROOT = os.path.join("src", "assets")
 
 # ---------------------------------------------------------
-# Static Asset Handler
+# Helper: Detect LAN IP
 # ---------------------------------------------------------
 
-def try_serve_asset(path):
-    if path == "/":
-        path = "/index.html"
-
-    file_path = os.path.join(ASSET_ROOT, path.lstrip("/"))
-
-    if not os.path.isfile(file_path):
-        return None
-
-    ext = file_path.split(".")[-1].lower()
-    content_types = {
-        "html": "text/html",
-        "htm": "text/html",
-        "css": "text/css",
-        "js": "application/javascript",
-        "png": "image/png",
-        "jpg": "image/jpeg",
-        "jpeg": "image/jpeg",
-        "gif": "image/gif",
-        "xml": "text/xml",
-        "txt": "text/plain",
-    }
-    content_type = content_types.get(ext, "application/octet-stream")
-
-    with open(file_path, "rb") as f:
-        return 200, content_type, f.read()
-
-# ---------------------------------------------------------
-# Request Router
-# ---------------------------------------------------------
-
-def handle_request(method, path, headers, body, client_ip):
-    # 1. Serve static assets first
-    asset = try_serve_asset(path)
-    if asset:
-        return asset
-
-    # 2. Connection Test
-    if method == "GET" and path == "/":
-        return 200, "text/html", conntest.handle_root().encode()
-
-    # 3. NAS Authentication
-    if method == "POST" and path == "/ac":
-        response = nas.handle_ac(body, client_ip)
-        return 200, "text/plain", response.encode()
-
-    # 4. Default 404
-    return 404, "text/plain", b"Not Found"
-
-# ---------------------------------------------------------
-# HTTP Server
-# ---------------------------------------------------------
-
-def client_thread(conn, addr):
-    client_ip = addr[0]
-
+def get_local_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
-        data = conn.recv(8192).decode("utf-8", errors="ignore")
-        if not data:
-            conn.close()
-            return
-
-        lines = data.split("\r\n")
-        request_line = lines[0]
-        method, path, _ = request_line.split(" ")
-
-        headers = {}
-        i = 1
-        while i < len(lines) and lines[i] != "":
-            if ":" in lines[i]:
-                k, v = lines[i].split(":", 1)
-                headers[k.strip()] = v.strip()
-            i += 1
-
-        body = lines[-1] if "\r\n\r\n" in data else ""
-
-        status, content_type, response_body = handle_request(
-            method, path, headers, body, client_ip
-        )
-
-        http_response = (
-            f"HTTP/1.1 {status} OK\r\n"
-            f"Content-Type: {content_type}\r\n"
-            f"Content-Length: {len(response_body)}\r\n"
-            f"Connection: close\r\n"
-            f"\r\n"
-        ).encode() + response_body
-
-        conn.sendall(http_response)
-
-    except Exception as e:
-        print("Error:", e)
-
+        s.connect(("8.8.8.8", 80))
+        return s.getsockname()[0]
+    except:
+        return "127.0.0.1"
     finally:
-        conn.close()
+        s.close()
+
 
 # ---------------------------------------------------------
-# Start Server
+# Helper: Boot Step Printer
 # ---------------------------------------------------------
 
-def start_server(host="0.0.0.0", port=80):
-    print(f"\nServer running on {host}:{port}\n")
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind((host, port))
-    s.listen(50)
+def boot_step(name, module_path):
+    print(f"Importing {name}...", end="", flush=True)
+    time.sleep(0.3)
+    importlib.import_module(module_path)
+    print(" Done!")
 
-    while True:
-        conn, addr = s.accept()
-        threading.Thread(target=client_thread, args=(conn, addr)).start()
+
+IP = get_local_ip()
+PORT = 80
+
+print("\nStarting Flipnote Hatena server...\n")
+time.sleep(0.4)
+
+# ---------------------------------------------------------
+# Real Module Imports (your actual folder structure)
+# ---------------------------------------------------------
+
+boot_step("Nintendo Authentication Server", "src.modules.nintendoAuth.nintendoAuth")
+boot_step("Nintendo Connection Test Server", "src.modules.connectionTest.NintendoConnectionTest")
+boot_step("UGO Menu Compiler", "src.modules.tools.UGO")
+
+# Add more modules here if needed:
+# boot_step("User Database", "src.modules.user.user")
+# boot_step("Flipnote Delivery", "src.modules.delivery.delivery")
+
+
+# ---------------------------------------------------------
+# Flask App
+# ---------------------------------------------------------
+
+app = Flask(__name__)
+
+
+# ---------------------------------------------------------
+# Browser Blocker — 403 Forbidden / 405 Method Not Allowed
+# ---------------------------------------------------------
+
+@app.before_request
+def block_non_dsi_clients():
+    ua = request.headers.get("User-Agent", "")
+
+    # Allow Flipnote Studio (DSi)
+    if "Flipnote Studio" in ua:
+        return
+
+    # Allow internal tools (curl, Python scripts)
+    if "curl" in ua or "Python" in ua:
+        return
+
+    # Block POST/PUT/DELETE from browsers
+    if request.method not in ("GET", "HEAD"):
+        resp = make_response(
+            "405 - Method Not Allowed\nFlipnote Hatena Server is for Nintendo DSi consoles only",
+            405
+        )
+        resp.headers["Content-Type"] = "text/plain"
+        return resp
+
+    # Block normal browser GET requests
+    resp = make_response(
+        "403 - Forbidden\nFlipnote Hatena Server is for Nintendo DSi consoles only",
+        403
+    )
+    resp.headers["Content-Type"] = "text/plain"
+    return resp
+
+
+# ---------------------------------------------------------
+# Root Route (DSi will never hit this, browsers will)
+# ---------------------------------------------------------
+
+@app.route("/")
+def root():
+    return "403 - Forbidden\nFlipnote Hatena Server is for Nintendo DSi consoles only", 403
+
+
+# ---------------------------------------------------------
+# Final Startup Message
+# ---------------------------------------------------------
+
+print("")
+print(f"Flipnote Hatena server running at {IP} on Port {PORT}")
+print("")
+print("Enter this in your Nintendo DSi Proxy Settings:")
+print(f"Proxy Server: {IP}")
+print(f"Port: {PORT}")
+print("")
+print("==============================================")
+print("        Press CTRL+C to stop the server       ")
+print("==============================================")
+
+# ---------------------------------------------------------
+# Start Flask Server
+# ---------------------------------------------------------
 
 if __name__ == "__main__":
-    start_server()
+    app.run(host="0.0.0.0", port=PORT)
