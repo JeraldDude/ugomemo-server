@@ -1,85 +1,71 @@
 import json
 import base64
-import struct
 import os
 
 
-MAGIC = b"UGAR"
+def b64_label(text: str) -> str:
+    """Encode label as Base64 UTF-16LE (no null terminator)."""
+    return base64.b64encode(text.encode("utf-16le")).decode("ascii")
 
 
-def encode_label(text: str) -> bytes:
-    """Encode label as UTF-16LE → Base64 → null-terminated ASCII."""
-    utf16 = text.encode("utf-16le")
-    b64 = base64.b64encode(utf16)
-    return b64 + b"\x00"
-
-
-def encode_url(url: str) -> bytes:
-    """Encode URL as UTF-8 null-terminated."""
-    return url.encode("utf-8") + b"\x00"
-
-
-def pack_entry(entry: dict) -> bytes:
+def build_toc(json_obj: dict) -> str:
     """
-    Pack a single UGO entry in Hatena-style binary format:
-
-    uint32  type (always 4)
-    char*   url   (null-terminated UTF-8)
-    uint32  icon
-    char*   label (null-terminated Base64 UTF16LE)
-    uint32  trait (0)
+    Build the Table of Contents text section.
+    Each entry is a line with tab-separated fields.
     """
-    entry_type = 4
-    url = encode_url(entry["url"])
-    icon = entry["icon"]
-    label = encode_label(entry["label"])
-    trait = 0
+    lines = []
 
-    return (
-        struct.pack(">I", entry_type) +
-        url +
-        struct.pack(">I", icon) +
-        label +
-        struct.pack(">I", trait)
-    )
+    # Layout (optional)
+    if "layout" in json_obj:
+        layout_values = "\t".join(str(v) for v in json_obj["layout"])
+        lines.append("0\t" + layout_values)
+
+    # Items
+    for item in json_obj["items"]:
+        if item["type"] == "button":
+            url = item["url"]
+            icon = item["icon"]
+            label = b64_label(item["label"])
+            trait = "0"  # always 0 for normal buttons
+
+            # Format EXACTLY like pbsds:
+            # 4 <url> <icon> <labelBase64> 0
+            line = f"4\t{url}\t{icon}\t{label}\t{trait}"
+            lines.append(line)
+
+        else:
+            raise ValueError(f"Unsupported item type: {item['type']}")
+
+    return "\n".join(lines)
 
 
-def json_to_ugo(json_obj: dict) -> bytes:
+def pack_ugo(json_obj: dict) -> bytes:
     """
-    Convert JSON menu structure into a UGO binary:
-
-    Header:
-      'UGAR'
-      uint32 entry_count
-      uint32 offset_to_table (0x20)
-      5× uint32 reserved (0)
-    Then entry table.
+    Build a complete UGO file matching pbsds's format exactly.
     """
-    items = json_obj["items"]
-    entry_count = len(items)
+    toc = build_toc(json_obj).encode("utf-8")
+    toc_len = len(toc)
 
-    table = b"".join(pack_entry(e) for e in items)
+    # Pad TOC to 4-byte alignment
+    if toc_len % 4 != 0:
+        toc += b"\x00" * (4 - (toc_len % 4))
 
-    header = (
-        MCalculator +
-        struct.pack(">I", entry_count) +
-        struct.pack(">I", 0x20) +
-        struct.pack(">I", 0) +
-        struct.pack(">I", 0) +
-        struct.pack(">I", 0) +
-        struct.pack(">I", 0) +
-        struct.pack(">I", 0)
-    )
+    # Header:
+    # "UGAR"
+    # uint32 sections (always 1 for TOC-only)
+    # uint32 toc_length
+    header = b"UGAR"
+    header += (1).to_bytes(4, "big")       # Sections = 1
+    header += toc_len.to_bytes(4, "big")   # TOC length
 
-    return header + table
+    return header + toc
 
 
-def convert_file(input_path: str, output_path: str) -> None:
-    """Convert a JSON file into a .ugo file."""
+def convert_file(input_path: str, output_path: str):
     with open(input_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    ugo = json_to_ugo(data)
+    ugo = pack_ugo(data)
 
     with open(output_path, "wb") as f:
         f.write(ugo)
@@ -92,19 +78,17 @@ def convert_file(input_path: str, output_path: str) -> None:
 # ---------------------------------------------------------
 
 if __name__ == "__main__":
-    # Detect region folder automatically (v2-us, v2-eu, v2-jp)
     base = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    ds_folder = os.path.join(base, "ds")
+    assets_ds = os.path.join(base, "assets", "ds")
 
-    # Find first v2-xx folder
     region_folder = None
-    for name in os.listdir(ds_folder):
+    for name in os.listdir(assets_ds):
         if name.startswith("v2-"):
-            region_folder = os.path.join(ds_folder, name)
+            region_folder = os.path.join(assets_ds, name)
             break
 
     if region_folder is None:
-        print("[UGO] ERROR: No /ds/v2-xx/ folder found.")
+        print("[UGO] ERROR: No /src/assets/ds/v2-xx/ folder found.")
         exit(1)
 
     json_path = os.path.join(region_folder, "index.json")
