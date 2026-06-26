@@ -4,7 +4,7 @@
 here are the list of Nintendo DSi headers that get used while connecting or in use of Flipnote Hatena:
 
 X-DSi-MAC
-> The Nintendo DSi MAC Adress seen in the Internet Settings (Uppercase HEX)
+> The Nintendo DSi MAC Address seen in the Internet Settings (Uppercase HEX)
  
 X-DSi-ID
 
